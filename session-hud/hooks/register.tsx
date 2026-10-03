@@ -15,7 +15,7 @@ const clock = (s: number): string => {
 }
 const short = (n: number): string =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M` : n >= 1_000 ? `${Math.round(n / 1_000)}K` : String(n)
-// When to recommend /compact (Claude Code team: context rot around 300-400K tokens, task dependent)
+// When to recommend /compact (rule of thumb: quality drops around 300-400K tokens, task dependent)
 // soft: suggest at 300K (or 50% of a smaller window); hard: urge at 400K (or 70%)
 const compactAt = (win: number): number => Math.min(300_000, Math.round(win * 0.5))
 const compactHard = (win: number): number => Math.min(400_000, Math.round(win * 0.7))
