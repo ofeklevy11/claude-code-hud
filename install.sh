@@ -1,16 +1,21 @@
 #!/bin/sh
-# Installs the claude-code-hud mods into ~/.claude/skills and checks the desktop-app setting.
+# Installs the session-hud mod into ~/.claude/skills and checks the desktop-app setting.
 set -e
 
 here=$(cd "$(dirname "$0")" && pwd)
 skills="$HOME/.claude/skills"
 mkdir -p "$skills"
 
-for mod in context-meter session-hud; do
+for mod in session-hud; do
   rm -rf "$skills/$mod"
   cp -R "$here/$mod" "$skills/$mod"
   echo "Installed $mod -> $skills/$mod"
 done
+
+# Before 2.0 the context meter was a mod of its own; with both, it shows twice
+if [ -d "$skills/context-meter" ]; then
+  printf '\nFound the old context-meter mod. session-hud includes it now: delete %s so it does not show twice.\n' "$skills/context-meter"
+fi
 
 settings="$HOME/.claude/settings.json"
 if [ -f "$settings" ] && grep -q '"CLAUDE_CODE_PLUGIN_DIR_WATCH"' "$settings"; then

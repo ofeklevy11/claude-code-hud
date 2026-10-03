@@ -2,10 +2,12 @@ export type Limit = { kind: string; percent: number; resetsAt: string | null }
 export type Hud = {
   limits: Limit[]
   costUsd: number | null
-  turnCostUsd: number | null
   isRunning: boolean
   turnSeconds: number
   totalSeconds: number
+  ctxTokens: number | null
+  ctxWindow: number
+  ctxPercent: number | null
 }
 
 declare module 'claude-code' {

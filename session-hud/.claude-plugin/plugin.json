@@ -1,1 +1,1 @@
-{ "name": "session-hud", "version": "1.2.0", "description": "Session HUD above the prompt: 5-hour plan limit with reset time, a this-prompt clock, an all-prompts clock and session cost", "types": "./types/index.d.ts" }
+{ "name": "session-hud", "version": "2.0.0", "description": "Session HUD above the prompt: context window, 5-hour plan limit, prompt clocks and session cost, as side-by-side cards", "types": "./types/index.d.ts" }

@@ -3,12 +3,8 @@ import type { Register } from 'claude-code'
 
 import type { Hud, Limit } from '../types'
 
-const EMPTY: Hud = { limits: [], costUsd: null, turnCostUsd: null, isRunning: false, turnSeconds: 0, totalSeconds: 0 }
+const EMPTY: Hud = { limits: [], costUsd: null, isRunning: false, turnSeconds: 0, totalSeconds: 0, ctxTokens: null, ctxWindow: 0, ctxPercent: null }
 const hud = atom({ plugin: 'session-hud', key: 'hud' } as const, EMPTY)
-
-const CELLS = 12
-const LABELS: Record<string, string> = { five_hour: '5-hour', seven_day: 'Weekly', spend_limit: 'Spend' }
-const ICONS: Record<string, string> = { five_hour: '⚡', seven_day: '📅', spend_limit: '💳' }
 
 const tone = (p: number): string => (p >= 85 ? 'red' : p >= 60 ? 'yellow' : 'green')
 const clock = (s: number): string => {
@@ -17,6 +13,8 @@ const clock = (s: number): string => {
   const sec = String(s % 60).padStart(2, '0')
   return hrs > 0 ? `${hrs}:${String(min).padStart(2, '0')}:${sec}` : `${min}:${sec}`
 }
+const short = (n: number): string =>
+  n >= 1_000_000 ? `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M` : n >= 1_000 ? `${Math.round(n / 1_000)}K` : String(n)
 const usd = (n: number | null): string => (n === null ? '—' : `$${n.toFixed(2)}`)
 const inTime = (iso: string | null, now: number): string => {
   if (!iso) return ''
@@ -28,33 +26,29 @@ const inTime = (iso: string | null, now: number): string => {
   return d > 0 ? `resets in ${d}d ${hr}h` : hr > 0 ? `resets in ${hr}h ${m % 60}m` : `resets in ${m}m`
 }
 
-async function pull($: any, costAtStart: number | null): Promise<void> {
+async function pull($: any): Promise<void> {
   const u = await $.session.usage()
   const limits: Limit[] = (u.rateLimits ?? []).map((r: any) => ({ kind: r.kind, percent: r.percentUsed, resetsAt: r.resetsAt ?? null }))
-  const cost = u.cost?.usd ?? null
+  const c = u.context ?? {}
   await update($, hud, st => ({
-    ...st,
-    limits,
-    costUsd: cost,
-    turnCostUsd: cost !== null && costAtStart !== null ? Math.max(0, cost - costAtStart) : st.turnCostUsd,
+    ...st, limits, costUsd: u.cost?.usd ?? null,
+    ctxTokens: c.tokens ?? null, ctxWindow: c.window ?? st.ctxWindow, ctxPercent: c.percent ?? null,
   }))
 }
 
 export const register: Register = on => {
   let startedAt = 0
-  let costAtStart: number | null = null
   let tick: { cancel: () => void } | null = null
 
   on('session.start', async ($, e, next) => {
     const r = await next(e)
-    await pull($, null)
+    await pull($)
     return r
   })
 
   on('prompt.submit', async ($, e, next) => {
     startedAt = await $.clock.now()
-    costAtStart = (await $.session.usage()).cost?.usd ?? null
-    await update($, hud, st => ({ ...st, isRunning: true, turnSeconds: 0, turnCostUsd: 0 }))
+    await update($, hud, st => ({ ...st, isRunning: true, turnSeconds: 0 }))
     tick?.cancel()
     tick = $.clock.every(1000, async () => {
       const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
@@ -70,8 +64,21 @@ export const register: Register = on => {
     const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
     // Every finished prompt adds its time to the session total
     await update($, hud, st => ({ ...st, isRunning: false, turnSeconds: s, totalSeconds: (st.totalSeconds ?? 0) + s }))
-    await pull($, costAtStart)
+    await pull($)
     if (s >= 120) $.ui.toast(`✅ Turn finished in ${clock(s)}`)
+    return r
+  })
+
+  // Keep the context window live during a turn
+  on('tool.call', async ($, e, next) => {
+    const r = await next(e)
+    await pull($)
+    return r
+  })
+
+  on('session.compact', async ($, e, next) => {
+    const r = await next(e)
+    await pull($)
     return r
   })
 
@@ -88,66 +95,83 @@ export const register: Register = on => {
     const header = (
       <Text wrap="truncate">
         <Text dimColor>{'── '}</Text>
-        <Text bold color="yellowBright">{'⚡ Session'}</Text>
-        <Text dimColor>{` · session-hud ${'─'.repeat(Math.max(2, W - 27))}`}</Text>
+        <Text bold color="blueBright">{'⚡ Session HUD'}</Text>
+        <Text dimColor>{` · session-hud ${'─'.repeat(Math.max(2, W - 31))}`}</Text>
       </Text>
     )
-    const SEP = '   │   '
-
-    // Each piece is a list of spans; a row is one Text holding them, so it never splits into columns
-    const limitSpans = (l: Limit, cells: number, compact: boolean) => {
-      const filled = Math.max(l.percent > 0 ? 1 : 0, Math.min(cells, Math.round((l.percent / 100) * cells)))
-      const reset = inTime(l.resetsAt, now)
-      return [
-        <Text bold>{`${ICONS[l.kind] ?? '•'} ${compact ? '' : `${LABELS[l.kind] ?? l.kind} `}`}</Text>,
-        <Text color={tone(l.percent)}>{'█'.repeat(filled)}</Text>,
-        <Text dimColor>{'░'.repeat(cells - filled)}</Text>,
-        <Text bold color={tone(l.percent)}>{` ${Math.round(l.percent)}%`}</Text>,
-        <Text dimColor>{reset ? ` ${compact ? reset.replace('resets in ', '↻ ') : reset}` : ''}</Text>,
-      ]
-    }
-    // Two clocks: the prompt running now (or the last one), and every prompt of the session added up
-    const total = (st.totalSeconds ?? 0) + (st.isRunning ? st.turnSeconds : 0)
-    const turnSpan = st.isRunning
-      ? <Text bold color="cyan">{`⏱ This prompt ${clock(st.turnSeconds)}`}</Text>
-      : <Text bold>{`⏱ Last prompt ${clock(st.turnSeconds)}`}</Text>
-    const totalSpan = <Text bold>{`⌛ All prompts ${clock(total)}`}</Text>
-    const costSpans = (compact: boolean) => [
-      <Text bold color="green">{`💵 ${compact ? '' : 'Session '}${usd(st.costUsd)}`}</Text>,
-    ]
-    const row = (...spans: any[]) => <Text wrap="truncate">{spans}</Text>
-    const sep = <Text dimColor>{SEP}</Text>
-    const noLimits = <Text dimColor wrap="truncate">⚡ 5-hour limit appears after the first reply</Text>
-    // Only the 5-hour window is shown
     const five = st.limits.find(l => l.kind === 'five_hour')
 
+    const ctxLeft = st.ctxTokens === null ? st.ctxWindow : Math.max(0, st.ctxWindow - st.ctxTokens)
+    // Two clocks: the prompt running now (or the last one), and every prompt of the session added up
+    const total = (st.totalSeconds ?? 0) + (st.isRunning ? st.turnSeconds : 0)
+    // Labels in blue, values in their own color
+    const label = (t: string) => <Text bold color="blueBright">{t}</Text>
+
+    // Side-by-side cards: each metric is a small titled column, and the cards wrap with the width
+    const bar = (cells: number, pct: number | null) => {
+      const p = pct ?? 0
+      const filled = Math.max(pct === null ? 0 : 1, Math.min(cells, Math.round((p / 100) * cells)))
+      return [
+        <Text color={tone(p)}>{'█'.repeat(filled)}</Text>,
+        <Text dimColor>{'░'.repeat(Math.max(0, cells - filled))}</Text>,
+        <Text bold color={tone(p)}>{pct === null ? ' —' : ` ${Math.round(p)}%`}</Text>,
+      ]
+    }
+    const reset5 = five ? inTime(five.resetsAt, now) : ''
+    const card = (width: number, ...rowsOfSpans: any[][]) => (
+      <Box flexDirection="column" width={width}>
+        {rowsOfSpans.map(spans => <Text wrap="truncate">{spans}</Text>)}
+      </Box>
+    )
+    const ctxCard = (w: number) => card(w,
+      [label('🧠 Context window')],
+      bar(Math.max(4, w - 6), st.ctxPercent),
+      [st.ctxTokens === null ? <Text dimColor>no data yet</Text> : <Text dimColor>{`${short(ctxLeft)} left of ${short(st.ctxWindow)}`}</Text>],
+    )
+    const fiveCard = (w: number) => card(w,
+      [label('⚡ 5-hour limit')],
+      five ? bar(Math.max(4, w - 6), five.percent) : [<Text dimColor>after the first reply</Text>],
+      [<Text dimColor>{reset5 ? `↻ ${reset5.replace('resets in ', '')}` : ''}</Text>],
+    )
+    const timeCard = (w: number) => card(w,
+      [label('⏱ Prompt time')],
+      [<Text dimColor>{st.isRunning ? 'now  ' : 'last  '}</Text>, <Text bold color={st.isRunning ? 'cyan' : undefined}>{clock(st.turnSeconds)}</Text>],
+      [<Text dimColor>{'all   '}</Text>, <Text bold>{clock(total)}</Text>],
+    )
+    const costCard = (w: number) => card(w,
+      [label('💵 Session cost')],
+      [<Text bold color="green">{usd(st.costUsd)}</Text>],
+      [<Text dimColor>{'this session'}</Text>],
+    )
+    // One line for the clocks and the cost, used when only two cards fit across
+    const statsLine = (
+      <Text wrap="truncate">
+        {label('⏱ ')}<Text bold color={st.isRunning ? 'cyan' : undefined}>{clock(st.turnSeconds)}</Text>
+        <Text dimColor>{st.isRunning ? ' now' : ' last'}</Text>
+        <Text dimColor>{'  ·  '}</Text>
+        {label('⌛ ')}<Text bold>{clock(total)}</Text><Text dimColor>{' all'}</Text>
+        <Text dimColor>{'  ·  '}</Text>
+        {label('💵 ')}<Text bold color="green">{usd(st.costUsd)}</Text>
+      </Text>
+    )
+
+    const GAP = 3
     let rows: any[]
-    if (W >= 84) {
-      // Wide: the limit and the cost, then both clocks
-      const cells = Math.max(8, Math.min(CELLS, W - 64))
-      rows = [
-        row(
-          ...(five ? limitSpans(five, cells, false) : [<Text dimColor>⚡ 5-hour limit after the first reply</Text>]),
-          sep, ...costSpans(false),
-        ),
-        row(turnSpan, sep, totalSpan),
-      ]
-    } else if (W >= 46) {
-      // Medium: the limit, both clocks, then the cost
-      const cells = Math.max(8, Math.min(CELLS, W - 36))
-      rows = [
-        five ? row(...limitSpans(five, cells, false)) : noLimits,
-        row(turnSpan, sep, totalSpan),
-        row(...costSpans(false)),
-      ]
+    if (W >= 96) {
+      // Wide: four cards in one band
+      const w = Math.floor((W - GAP * 3) / 4)
+      rows = [<Box flexDirection="row" columnGap={GAP}>{ctxCard(w)}{fiveCard(w)}{timeCard(w)}{costCard(w)}</Box>]
+    } else if (W >= 40) {
+      // Medium and split view: the two gauges side by side, then one stats line
+      const w = Math.floor((W - GAP) / 2)
+      rows = [<Box flexDirection="row" columnGap={GAP}>{ctxCard(w)}{fiveCard(w)}</Box>, statsLine]
     } else {
-      // Narrow (split view): one item per row
-      const cells = Math.max(5, Math.min(10, W - 22))
+      // Very narrow: one compact line per gauge, then the stats
+      const cells = Math.max(4, W - 26)
       rows = [
-        five ? row(...limitSpans(five, cells, true)) : noLimits,
-        row(turnSpan),
-        row(totalSpan),
-        row(...costSpans(true)),
+        <Text wrap="truncate">{label('🧠 ')}{bar(cells, st.ctxPercent)}<Text dimColor>{st.ctxTokens === null ? '' : ` ${short(ctxLeft)} left`}</Text></Text>,
+        <Text wrap="truncate">{label('⚡ ')}{five ? bar(cells, five.percent) : <Text dimColor>—</Text>}<Text dimColor>{reset5 ? ` ↻ ${reset5.replace('resets in ', '')}` : ''}</Text></Text>,
+        statsLine,
       ]
     }
 
