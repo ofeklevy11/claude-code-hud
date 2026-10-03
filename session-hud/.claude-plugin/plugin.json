@@ -1,0 +1,1 @@
+{ "name": "session-hud", "version": "1.0.0", "description": "Session HUD above the prompt: 5-hour plan limit with reset time, live turn timer, tool calls and session cost", "types": "./types/index.d.ts" }

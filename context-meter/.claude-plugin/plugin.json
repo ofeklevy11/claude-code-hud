@@ -1,0 +1,1 @@
+{ "name": "context-meter", "version": "1.0.0", "description": "Context window meter: a colored bar above the prompt and a status line, in every session", "types": "./types/index.d.ts" }
