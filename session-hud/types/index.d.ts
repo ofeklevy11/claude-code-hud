@@ -5,7 +5,7 @@ export type Hud = {
   turnCostUsd: number | null
   isRunning: boolean
   turnSeconds: number
-  turnTools: number
+  totalSeconds: number
 }
 
 declare module 'claude-code' {

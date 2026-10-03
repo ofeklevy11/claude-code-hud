@@ -3,7 +3,7 @@ import type { Register } from 'claude-code'
 
 import type { Hud, Limit } from '../types'
 
-const EMPTY: Hud = { limits: [], costUsd: null, turnCostUsd: null, isRunning: false, turnSeconds: 0, turnTools: 0 }
+const EMPTY: Hud = { limits: [], costUsd: null, turnCostUsd: null, isRunning: false, turnSeconds: 0, totalSeconds: 0 }
 const hud = atom({ plugin: 'session-hud', key: 'hud' } as const, EMPTY)
 
 const CELLS = 12
@@ -11,7 +11,12 @@ const LABELS: Record<string, string> = { five_hour: '5-hour', seven_day: 'Weekly
 const ICONS: Record<string, string> = { five_hour: '⚡', seven_day: '📅', spend_limit: '💳' }
 
 const tone = (p: number): string => (p >= 85 ? 'red' : p >= 60 ? 'yellow' : 'green')
-const clock = (s: number): string => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+const clock = (s: number): string => {
+  const hrs = Math.floor(s / 3600)
+  const min = Math.floor((s % 3600) / 60)
+  const sec = String(s % 60).padStart(2, '0')
+  return hrs > 0 ? `${hrs}:${String(min).padStart(2, '0')}:${sec}` : `${min}:${sec}`
+}
 const usd = (n: number | null): string => (n === null ? '—' : `$${n.toFixed(2)}`)
 const inTime = (iso: string | null, now: number): string => {
   if (!iso) return ''
@@ -49,7 +54,7 @@ export const register: Register = on => {
   on('prompt.submit', async ($, e, next) => {
     startedAt = await $.clock.now()
     costAtStart = (await $.session.usage()).cost?.usd ?? null
-    await update($, hud, st => ({ ...st, isRunning: true, turnSeconds: 0, turnTools: 0, turnCostUsd: 0 }))
+    await update($, hud, st => ({ ...st, isRunning: true, turnSeconds: 0, turnCostUsd: 0 }))
     tick?.cancel()
     tick = $.clock.every(1000, async () => {
       const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
@@ -63,16 +68,10 @@ export const register: Register = on => {
     tick?.cancel()
     tick = null
     const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
-    await update($, hud, st => ({ ...st, isRunning: false, turnSeconds: s }))
+    // Every finished prompt adds its time to the session total
+    await update($, hud, st => ({ ...st, isRunning: false, turnSeconds: s, totalSeconds: st.totalSeconds + s }))
     await pull($, costAtStart)
     if (s >= 120) $.ui.toast(`✅ Turn finished in ${clock(s)}`)
-    return r
-  })
-
-  // Count every tool call of the turn
-  on('tool.call', async ($, e, next) => {
-    const r = await next(e)
-    await update($, hud, st => ({ ...st, turnTools: st.turnTools + 1 }))
     return r
   })
 
@@ -98,12 +97,12 @@ export const register: Register = on => {
         <Text dimColor>{reset ? ` ${compact ? reset.replace('resets in ', '↻ ') : reset}` : ''}</Text>,
       ]
     }
-    const turnSpans = (compact: boolean) => [
-      st.isRunning
-        ? <Text bold color="cyan">{`⏱ ${compact ? '' : 'Turn '}${clock(st.turnSeconds)}`}</Text>
-        : <Text bold>{`⏱ ${compact ? '' : 'Last turn '}${clock(st.turnSeconds)}`}</Text>,
-      <Text dimColor>{` · ${st.turnTools} ${compact ? 'tools' : 'tool calls'}`}</Text>,
-    ]
+    // Two clocks: the prompt running now (or the last one), and every prompt of the session added up
+    const total = st.totalSeconds + (st.isRunning ? st.turnSeconds : 0)
+    const turnSpan = st.isRunning
+      ? <Text bold color="cyan">{`⏱ This prompt ${clock(st.turnSeconds)}`}</Text>
+      : <Text bold>{`⏱ Last prompt ${clock(st.turnSeconds)}`}</Text>
+    const totalSpan = <Text bold>{`⌛ All prompts ${clock(total)}`}</Text>
     const costSpans = (compact: boolean) => [
       <Text bold color="green">{`💵 ${compact ? '' : 'Session '}${usd(st.costUsd)}`}</Text>,
     ]
@@ -115,28 +114,30 @@ export const register: Register = on => {
 
     let rows: any[]
     if (W >= 84) {
-      // Wide: one row
+      // Wide: the limit and the cost, then both clocks
       const cells = Math.max(8, Math.min(CELLS, W - 64))
       rows = [
         row(
           ...(five ? limitSpans(five, cells, false) : [<Text dimColor>⚡ 5-hour limit after the first reply</Text>]),
-          sep, ...turnSpans(false),
           sep, ...costSpans(false),
         ),
+        row(turnSpan, sep, totalSpan),
       ]
     } else if (W >= 46) {
-      // Medium: the limit, then the turn
+      // Medium: the limit, both clocks, then the cost
       const cells = Math.max(8, Math.min(CELLS, W - 36))
       rows = [
         five ? row(...limitSpans(five, cells, false)) : noLimits,
-        row(...turnSpans(false), sep, ...costSpans(false)),
+        row(turnSpan, sep, totalSpan),
+        row(...costSpans(false)),
       ]
     } else {
-      // Narrow (split view): compact rows, short labels
+      // Narrow (split view): one item per row
       const cells = Math.max(5, Math.min(10, W - 22))
       rows = [
         five ? row(...limitSpans(five, cells, true)) : noLimits,
-        row(...turnSpans(true)),
+        row(turnSpan),
+        row(totalSpan),
         row(...costSpans(true)),
       ]
     }

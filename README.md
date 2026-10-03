@@ -2,9 +2,20 @@
 
 # claude-code-hud
 
-**שני mods ל-Claude Code שמציגים מעל תיבת הכתיבה את מה שבאמת חשוב לדעת תוך כדי עבודה: כמה מקום נשאר בחלון הקונטקסט, כמה נשאר ממכסת 5 השעות ומתי היא מתאפסת, כמה זמן לקח התור האחרון, וכמה עלה הסשן.**
+**שני mods ל-Claude Code שמציגים מעל תיבת הכתיבה את מה שבאמת חשוב לדעת תוך כדי עבודה: כמה מקום נשאר בחלון הקונטקסט, כמה נשאר ממכסת 5 השעות ומתי היא מתאפסת, כמה זמן לקח הפרומפט האחרון וכמה זמן עבדו כל הפרומפטים בסשן ביחד, וכמה עלה הסשן.**
 
-<img src="assets/preview.png" alt="claude-code-hud מעל תיבת הכתיבה" width="420">
+<div dir="ltr">
+
+```
+🧠 17% ██████░░░░░░░░░░░░░░░░░░
+830K left of 1M
+⚡ ██░░░░░░ 5% ↻ 4h 24m
+⏱ Last prompt 3:56
+⌛ All prompts 14:02
+💵 $2.06
+```
+
+</div>
 
 עובד באפליקציית הדסקטופ (לשונית Code) ובטרמינל. הפריסה מתאימה את עצמה לרוחב החלון, גם ב-split view.
 
@@ -13,7 +24,11 @@
 | Mod | מה הוא מציג |
 |---|---|
 | **context-meter** 🧠 | פס צבעוני של מילוי חלון הקונטקסט, כמה טוקנים נשארו, ומשפט קצר על המצב ("plenty of room", "halfway" ועד "almost full, compaction soon"). ירוק עד 50%, צהוב עד 80%, אדום מעל. מוסיף גם שורת סטטוס. |
-| **session-hud** ⚡ | מכסת 5 השעות עם פס, אחוז וזמן עד האיפוס · ⏱ טיימר חי בזמן ש-Claude עובד, ואחר כך משך התור האחרון ומספר הפעולות שהריץ · 💵 העלות של הסשן עד עכשיו בדולרים · הודעה קופצת כשתור ארוך (2 דקות ומעלה) נגמר. |
+| **session-hud** ⚡ | מכסת 5 השעות עם פס, אחוז וזמן עד האיפוס · שני שעונים (הסבר מתחת לטבלה) · 💵 העלות של הסשן עד עכשיו בדולרים · הודעה קופצת כשפרומפט ארוך (2 דקות ומעלה) נגמר. |
+
+**שני השעונים, ומה ההבדל ביניהם:**
+- **⏱ This prompt / Last prompt:** הזמן של פרומפט אחד, מהשליחה ועד ש-Claude סיים. בזמן שהוא עובד השעון רץ בתכלת ("This prompt"), וכשהוא מסיים נשאר הזמן של הפרומפט האחרון ("Last prompt").
+- **⌛ All prompts:** סכום הזמנים של כל הפרומפטים בסשן. אם היו פרומפטים של 3, 7 ו-4 דקות, יופיע `14:00`. הזמן שבו הסשן חיכה לכם לא נספר, רק הזמן ש-Claude עבד בפועל.
 
 אפשר להתקין רק אחד מהם. כל אחד עומד בפני עצמו, וכשמתקינים את שניהם הם מוצגים אחד מתחת לשני.
 
@@ -102,7 +117,7 @@ MIT
 Two Claude Code mods that sit above the prompt box:
 
 - **context-meter**: a colored context-window bar with tokens left and a short status (green < 50%, yellow < 80%, red above), plus a status line.
-- **session-hud**: the 5-hour plan limit with time to reset, a live turn timer with tool-call count, session cost in USD, and a toast when a long turn (2 min+) ends.
+- **session-hud**: the 5-hour plan limit with time to reset, two clocks (**⏱ This/Last prompt**: one prompt end to end; **⌛ All prompts**: every prompt of the session added up, idle time excluded), session cost in USD, and a toast when a long prompt (2 min+) ends.
 
 The layout adapts to the window width, split view included.
 
