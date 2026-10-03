@@ -69,7 +69,7 @@ export const register: Register = on => {
     tick = null
     const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
     // Every finished prompt adds its time to the session total
-    await update($, hud, st => ({ ...st, isRunning: false, turnSeconds: s, totalSeconds: st.totalSeconds + s }))
+    await update($, hud, st => ({ ...st, isRunning: false, turnSeconds: s, totalSeconds: (st.totalSeconds ?? 0) + s }))
     await pull($, costAtStart)
     if (s >= 120) $.ui.toast(`✅ Turn finished in ${clock(s)}`)
     return r
@@ -98,7 +98,7 @@ export const register: Register = on => {
       ]
     }
     // Two clocks: the prompt running now (or the last one), and every prompt of the session added up
-    const total = st.totalSeconds + (st.isRunning ? st.turnSeconds : 0)
+    const total = (st.totalSeconds ?? 0) + (st.isRunning ? st.turnSeconds : 0)
     const turnSpan = st.isRunning
       ? <Text bold color="cyan">{`⏱ This prompt ${clock(st.turnSeconds)}`}</Text>
       : <Text bold>{`⏱ Last prompt ${clock(st.turnSeconds)}`}</Text>
