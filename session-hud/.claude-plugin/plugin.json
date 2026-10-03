@@ -1,1 +1,14 @@
-{ "name": "session-hud", "version": "2.1.0", "description": "Session Tracker above the prompt: context window with a compact recommendation and button, 5-hour plan limit, prompt clocks and session cost", "types": "./types/index.d.ts" }
+{
+  "name": "session-hud",
+  "version": "2.2.0",
+  "description": "Session Tracker above the prompt box: context window with a compact recommendation and button, 5-hour plan limit, prompt clocks and session cost.",
+  "author": {
+    "name": "Ofek Levy",
+    "url": "https://github.com/ofeklevy11"
+  },
+  "homepage": "https://github.com/ofeklevy11/claude-code-hud",
+  "repository": "https://github.com/ofeklevy11/claude-code-hud",
+  "license": "MIT",
+  "keywords": ["mod", "hud", "status", "context-window", "usage-limit", "timer", "cost"],
+  "types": "./types/index.d.ts"
+}
