@@ -4,16 +4,7 @@
 
 **mod ל-Claude Code שמציג מעל תיבת הכתיבה את מה שבאמת חשוב לדעת תוך כדי עבודה: כמה מקום נשאר בחלון הקונטקסט, כמה נשאר ממכסת 5 השעות ומתי היא מתאפסת, כמה זמן לקח הפרומפט האחרון וכמה זמן עבדו כל הפרומפטים בסשן ביחד, וכמה עלה הסשן.**
 
-<div dir="ltr">
-
-```
-── ⚡ Session HUD · session-hud ──────────────────────────────────────────────
-🧠 Context window      ⚡ 5-hour limit        ⏱ Prompt time       💵 Session cost
-████░░░░░░░░░ 17%      █░░░░░░░░░░░░ 5%       last  3:56          $2.06
-830K left of 1M        ↻ 4h 24m               all   14:02         this session
-```
-
-</div>
+<img src="assets/preview.png" alt="Session Tracker מעל תיבת הכתיבה" width="460">
 
 עובד באפליקציית הדסקטופ (לשונית Code) ובטרמינל.
 
@@ -23,12 +14,19 @@
 
 | כרטיס | מה הוא מציג |
 |---|---|
-| **🧠 Context window** | פס של מילוי חלון הקונטקסט באחוזים, וכמה טוקנים נשארו. מתעדכן אחרי כל פעולה של Claude ואחרי דחיסה של השיחה. |
+| **🧠 Context window** | פס של מילוי חלון הקונטקסט באחוזים, וכמה טוקנים נשארו, עם כפתור **Compact** שדוחס את השיחה בלחיצה. מתעדכן אחרי כל פעולה של Claude ואחרי דחיסה. |
 | **⚡ 5-hour limit** | פס של מכסת 5 השעות באחוזים, וכמה זמן נשאר עד שהיא מתאפסת. |
 | **⏱ Prompt time** | שני שעונים. הסבר מתחת לטבלה. |
 | **💵 Session cost** | כמה הסשן עלה עד עכשיו, בדולרים. |
 
 הצבעים של הפסים: ירוק עד 60%, צהוב עד 85%, אדום מעל. כשפרומפט ארוך (2 דקות ומעלה) נגמר, קופצת הודעה.
+
+**💡 המלצה לדחוס את השיחה:** שיחה ארוכה מדי פוגעת באיכות התשובות, גם כשעוד נשאר מקום בחלון. לכן ה-mod ממליץ לדחוס כבר הרבה לפני שהחלון מתמלא:
+- **מעל 300K טוקנים:** שורה צהובה "Compact recommended", והכפתור הופך ל-**Compact now**. קופצת גם הודעה, פעם אחת בכל פעם שעוברים את הסף.
+- **מעל 400K טוקנים:** השורה הופכת לאדומה.
+- **בחלון קטן מ-1M:** הספים מחושבים כ-50% ו-70% מגודל החלון.
+
+הספים לפי המלצה של צוות Claude Code, שלפיה האיכות מתחילה לרדת בסביבות 300K עד 400K טוקנים. זה תלוי במשימה, אז זו המלצה ולא כלל.
 
 **שני השעונים, ומה ההבדל ביניהם:**
 - **now / last:** הזמן של פרומפט אחד, מהשליחה ועד ש-Claude סיים. בזמן שהוא עובד השעון רץ בתכלת ("now"). כשהוא מסיים, נשאר הזמן של הפרומפט האחרון ("last").
@@ -39,10 +37,11 @@
 <div dir="ltr">
 
 ```
-── ⚡ Session HUD · session-hud ───────────
+⚡ Session Tracker
 🧠 Context window      ⚡ 5-hour limit
 ████████░░░░ 17%       ██░░░░░░░░░░ 5%
 830K left of 1M        ↻ 4h 24m
+[ Compact ]
 ⏱ 3:56 last  ·  ⌛ 14:02 all  ·  💵 $2.06
 ```
 
@@ -50,7 +49,7 @@
 
 - **חלון רחב:** ארבעת הכרטיסים בשורה אחת.
 - **חלון בינוני ו-split view:** שני הפסים זה לצד זה, ומתחתם שורה אחת עם השעונים והעלות.
-- **חלון צר מאוד:** שורה קצרה לכל פס, ומתחתן שורת השעונים והעלות.
+- **חלון צר מאוד:** שורה קצרה לכל פס, מתחתן שורת השעונים והעלות, ובסוף כפתור הדחיסה. הצילום למעלה הוא הפריסה הזו.
 
 ## התקנה
 
@@ -118,6 +117,7 @@ sh install.sh
 הקוד נמצא ב-`session-hud/hooks/register.tsx`:
 
 - **ספי הצבעים:** הפונקציה `tone`.
+- **ספי ההמלצה לדחוס:** הפונקציות `compactAt` ו-`compactHard` בראש הקובץ.
 - **נקודות המעבר בין הפריסות:** הבדיקות `W >= 96` ו-`W >= 40` בסוף הקובץ.
 - **להציג גם את המכסה השבועית:** היום מוצג רק חלון 5 השעות (`st.limits.find(l => l.kind === 'five_hour')`). הנתונים של `seven_day` כבר נשלפים, ונשאר רק להוסיף להם כרטיס.
 - **מלכודת אחת:** לא לקרוא למשתנה בשם `h`. רכיבי ה-JSX נבנים דרך פונקציה בשם הזה, ומשתנה באותו שם מסתיר אותה. ה-mod קורס עם `h is not a function`. זה קרה לי.
@@ -138,9 +138,9 @@ MIT
 
 ## English
 
-A Claude Code mod that sits above the prompt box as four side-by-side cards:
+A Claude Code mod, **Session Tracker**, that sits above the prompt box as four side-by-side cards:
 
-- **🧠 Context window**: fill bar and tokens left, refreshed after every tool call and after compaction.
+- **🧠 Context window**: fill bar and tokens left, refreshed after every tool call and after compaction, with a **Compact** button. Past 300K tokens it recommends compacting (yellow, plus a one-time toast), and past 400K it turns red. On windows smaller than 1M the thresholds are 50% and 70% of the window.
 - **⚡ 5-hour limit**: fill bar and time until it resets.
 - **⏱ Prompt time**: two clocks. **now/last** is one prompt end to end. **all** is every prompt of the session added up, with idle time excluded.
 - **💵 Session cost** in USD.

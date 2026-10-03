@@ -8,6 +8,7 @@ export type Hud = {
   ctxTokens: number | null
   ctxWindow: number
   ctxPercent: number | null
+  nudged: boolean
 }
 
 declare module 'claude-code' {

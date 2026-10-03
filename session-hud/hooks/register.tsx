@@ -3,7 +3,7 @@ import type { Register } from 'claude-code'
 
 import type { Hud, Limit } from '../types'
 
-const EMPTY: Hud = { limits: [], costUsd: null, isRunning: false, turnSeconds: 0, totalSeconds: 0, ctxTokens: null, ctxWindow: 0, ctxPercent: null }
+const EMPTY: Hud = { limits: [], costUsd: null, isRunning: false, turnSeconds: 0, totalSeconds: 0, ctxTokens: null, ctxWindow: 0, ctxPercent: null, nudged: false }
 const hud = atom({ plugin: 'session-hud', key: 'hud' } as const, EMPTY)
 
 const tone = (p: number): string => (p >= 85 ? 'red' : p >= 60 ? 'yellow' : 'green')
@@ -15,6 +15,10 @@ const clock = (s: number): string => {
 }
 const short = (n: number): string =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M` : n >= 1_000 ? `${Math.round(n / 1_000)}K` : String(n)
+// When to recommend /compact (Claude Code team: context rot around 300-400K tokens, task dependent)
+// soft: suggest at 300K (or 50% of a smaller window); hard: urge at 400K (or 70%)
+const compactAt = (win: number): number => Math.min(300_000, Math.round(win * 0.5))
+const compactHard = (win: number): number => Math.min(400_000, Math.round(win * 0.7))
 const usd = (n: number | null): string => (n === null ? '—' : `$${n.toFixed(2)}`)
 const inTime = (iso: string | null, now: number): string => {
   if (!iso) return ''
@@ -34,6 +38,15 @@ async function pull($: any): Promise<void> {
     ...st, limits, costUsd: u.cost?.usd ?? null,
     ctxTokens: c.tokens ?? null, ctxWindow: c.window ?? st.ctxWindow, ctxPercent: c.percent ?? null,
   }))
+  // One nudge per crossing; it re-arms after a compaction brings the window back under
+  const st = await read($, hud)
+  const isOver = st.ctxTokens !== null && st.ctxWindow > 0 && st.ctxTokens >= compactAt(st.ctxWindow)
+  if (isOver && !st.nudged) {
+    $.ui.toast(`💡 Context passed ${short(compactAt(st.ctxWindow))} tokens: Compact recommended 300-400K+ (if 1M context window)`)
+    await update($, hud, x => ({ ...x, nudged: true }))
+  } else if (!isOver && st.nudged) {
+    await update($, hud, x => ({ ...x, nudged: false }))
+  }
 }
 
 export const register: Register = on => {
@@ -88,17 +101,11 @@ export const register: Register = on => {
 
     const st = await read($, hud)
     const now = await $.clock.now()
-    const { Box, Text } = $.ui.resolve(e)
+    const { Box, Text, Button } = $.ui.resolve(e)
     const W = Math.max(20, (e.props.bodyColumns ?? 80) - 6)
 
-    // Section header: the mod's name, so each mod reads as its own block
-    const header = (
-      <Text wrap="truncate">
-        <Text dimColor>{'── '}</Text>
-        <Text bold color="blueBright">{'⚡ Session HUD'}</Text>
-        <Text dimColor>{` · session-hud ${'─'.repeat(Math.max(2, W - 31))}`}</Text>
-      </Text>
-    )
+    // Section header: the mod's name
+    const header = <Text bold color="blueBright" wrap="truncate">{'⚡ Session Tracker'}</Text>
     const five = st.limits.find(l => l.kind === 'five_hour')
 
     const ctxLeft = st.ctxTokens === null ? st.ctxWindow : Math.max(0, st.ctxWindow - st.ctxTokens)
@@ -123,10 +130,30 @@ export const register: Register = on => {
         {rowsOfSpans.map(spans => <Text wrap="truncate">{spans}</Text>)}
       </Box>
     )
-    const ctxCard = (w: number) => card(w,
-      [label('🧠 Context window')],
-      bar(Math.max(4, w - 6), st.ctxPercent),
-      [st.ctxTokens === null ? <Text dimColor>no data yet</Text> : <Text dimColor>{`${short(ctxLeft)} left of ${short(st.ctxWindow)}`}</Text>],
+    const isOver = st.ctxTokens !== null && st.ctxWindow > 0 && st.ctxTokens >= compactAt(st.ctxWindow)
+    const isHard = isOver && st.ctxTokens !== null && st.ctxTokens >= compactHard(st.ctxWindow)
+    const compactBtn = (
+      <Button
+        key="compact"
+        label={isOver ? 'Compact now' : 'Compact'}
+        variant={isOver ? 'primary' : 'secondary'}
+        onPress={() => $.session.compact()}
+      />
+    )
+    const ctxNote = st.ctxTokens === null
+      ? <Text dimColor>no data yet</Text>
+      : isHard
+        ? <Text bold color="red">{`⚠ ${short(st.ctxTokens)} · Compact recommended 300-400K+ (if 1M context window)`}</Text>
+        : isOver
+        ? <Text color="yellow">{`💡 ${short(st.ctxTokens)} · Compact recommended 300-400K+ (if 1M context window)`}</Text>
+        : <Text dimColor>{`${short(ctxLeft)} left of ${short(st.ctxWindow)}`}</Text>
+    const ctxCard = (w: number) => (
+      <Box flexDirection="column" width={w}>
+        <Text wrap="truncate">{label('🧠 Context window')}</Text>
+        <Text wrap="truncate">{bar(Math.max(4, w - 6), st.ctxPercent)}</Text>
+        <Text wrap="truncate">{ctxNote}</Text>
+        {compactBtn}
+      </Box>
     )
     const fiveCard = (w: number) => card(w,
       [label('⚡ 5-hour limit')],
@@ -172,6 +199,7 @@ export const register: Register = on => {
         <Text wrap="truncate">{label('🧠 ')}{bar(cells, st.ctxPercent)}<Text dimColor>{st.ctxTokens === null ? '' : ` ${short(ctxLeft)} left`}</Text></Text>,
         <Text wrap="truncate">{label('⚡ ')}{five ? bar(cells, five.percent) : <Text dimColor>—</Text>}<Text dimColor>{reset5 ? ` ↻ ${reset5.replace('resets in ', '')}` : ''}</Text></Text>,
         statsLine,
+        <Box>{isOver ? <Text color="yellow">{'💡 Compact recommended 300-400K+ (if 1M context window)  '}</Text> : <Text>{''}</Text>}{compactBtn}</Box>,
       ]
     }
 
