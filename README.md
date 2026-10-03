@@ -6,7 +6,39 @@
 
 <img src="assets/preview.png" alt="Session Tracker מעל תיבת הכתיבה" width="460">
 
-עובד באפליקציית הדסקטופ (לשונית Code) ובטרמינל.
+עובד באפליקציית הדסקטופ (לשונית Code) ובטרמינל, ב-Windows, ב-Mac ובלינוקס.
+
+## התקנה: שורה אחת
+
+בתוך Claude Code (באפליקציה או בטרמינל), מדביקים בתיבת הכתיבה ושולחים:
+
+```
+/plugin install session-hud --marketplace ofeklevy11/claude-code-hud
+```
+
+מאשרים את ההתקנה, ופותחים סשן חדש. זהו.
+
+<details>
+<summary>לא עובד? אותו דבר בשתי פקודות, או מהטרמינל</summary>
+
+בתוך Claude Code, אחת אחרי השנייה:
+
+```
+/plugin marketplace add ofeklevy11/claude-code-hud
+/plugin install session-hud@claude-code-hud
+```
+
+או מהטרמינל, בלי לפתוח את Claude Code:
+
+```bash
+claude plugin marketplace add ofeklevy11/claude-code-hud && claude plugin install session-hud@claude-code-hud
+```
+
+אפשר גם פשוט לבקש מ-Claude: "תתקין לי את הפלאגין session-hud מה-marketplace ofeklevy11/claude-code-hud".
+
+</details>
+
+**צריך:** Claude Code בגרסה 2.1.287 ומעלה. מהגרסה הזו mods פועלים כברירת מחדל, בלי שום הגדרה.
 
 ## מה מקבלים
 
@@ -14,103 +46,52 @@
 
 | כרטיס | מה הוא מציג |
 |---|---|
-| **🧠 Context window** | פס של מילוי חלון הקונטקסט באחוזים, וכמה טוקנים נשארו, עם כפתור **Compact** שדוחס את השיחה בלחיצה. מתעדכן אחרי כל פעולה של Claude ואחרי דחיסה. |
+| **🧠 Context window** | פס של מילוי חלון הקונטקסט באחוזים וכמה טוקנים נשארו, עם כפתור **Compact** שדוחס את השיחה בלחיצה. |
 | **⚡ 5-hour limit** | פס של מכסת 5 השעות באחוזים, וכמה זמן נשאר עד שהיא מתאפסת. |
-| **⏱ Prompt time** | שני שעונים. הסבר מתחת לטבלה. |
+| **⏱ Prompt time** | שני שעונים: **now / last** הוא הזמן של פרומפט אחד, ו-**all** הוא סכום הזמן של כל הפרומפטים בסשן. |
 | **💵 Session cost** | כמה הסשן עלה עד עכשיו, בדולרים. |
 
-הצבעים של הפסים: ירוק עד 60%, צהוב עד 85%, אדום מעל. כשפרומפט ארוך (2 דקות ומעלה) נגמר, קופצת הודעה.
-
-**💡 המלצה לדחוס את השיחה:** שיחה ארוכה מדי פוגעת באיכות התשובות, גם כשעוד נשאר מקום בחלון. לכן ה-mod ממליץ לדחוס כבר הרבה לפני שהחלון מתמלא:
-- **מעל 300K טוקנים:** שורה צהובה "Compact recommended", והכפתור הופך ל-**Compact now**. קופצת גם הודעה, פעם אחת בכל פעם שעוברים את הסף.
-- **מעל 400K טוקנים:** השורה הופכת לאדומה.
-- **בחלון קטן מ-1M:** הספים מחושבים כ-50% ו-70% מגודל החלון.
-
-הספים מבוססים על כלל אצבע מקובל, שלפיו האיכות מתחילה לרדת בסביבות 300K עד 400K טוקנים. זה תלוי במשימה, אז זו המלצה ולא כלל. אפשר לשנות את הספים (ראו "התאמה אישית").
+**צבעים והתראות:**
+- הפסים ירוקים עד 60%, צהובים עד 85%, ואדומים מעל זה.
+- כשפרומפט ארוך (2 דקות ומעלה) נגמר, קופצת הודעה.
 
 **שני השעונים, ומה ההבדל ביניהם:**
 - **now / last:** הזמן של פרומפט אחד, מהשליחה ועד ש-Claude סיים. בזמן שהוא עובד השעון רץ בתכלת ("now"). כשהוא מסיים, נשאר הזמן של הפרומפט האחרון ("last").
 - **all:** סכום הזמנים של כל הפרומפטים בסשן. אם היו פרומפטים של 3, 7 ו-4 דקות, יופיע `14:00`. נספר רק הזמן ש-Claude עבד בפועל, בלי הזמן שבו הסשן חיכה לכם.
 
+**💡 המלצה לדחוס את השיחה:** שיחה ארוכה מדי פוגעת באיכות התשובות, גם כשעוד נשאר מקום בחלון. לכן ה-mod ממליץ לדחוס הרבה לפני שהחלון מתמלא:
+- **מעל 300K טוקנים:** מופיעה שורה צהובה "Compact recommended", והכפתור הופך ל-**Compact now**. קופצת גם הודעה, פעם אחת בכל פעם שעוברים את הסף.
+- **מעל 400K טוקנים:** השורה הופכת לאדומה.
+- **בחלון קטן מ-1M:** הספים הם 50% ו-70% מגודל החלון.
+
+הספים מבוססים על כלל אצבע מקובל, שלפיו האיכות מתחילה לרדת בסביבות 300K עד 400K טוקנים. זה תלוי במשימה, אז זו המלצה ולא חוק.
+
 **הפריסה מתאימה את עצמה לרוחב החלון:**
-
-<div dir="ltr">
-
-```
-⚡ Session Tracker
-🧠 Context window      ⚡ 5-hour limit
-████████░░░░ 17%       ██░░░░░░░░░░ 5%
-830K left of 1M        ↻ 4h 24m
-[ Compact ]
-⏱ 3:56 last  ·  ⌛ 14:02 all  ·  💵 $2.06
-```
-
-</div>
-
 - **חלון רחב:** ארבעת הכרטיסים בשורה אחת.
 - **חלון בינוני ו-split view:** שני הפסים זה לצד זה, ומתחתם שורה אחת עם השעונים והעלות.
-- **חלון צר מאוד:** שורה קצרה לכל פס, מתחתן שורת השעונים והעלות, ובסוף כפתור הדחיסה. הצילום למעלה הוא הפריסה הזו.
+- **חלון צר מאוד:** שורה קצרה לכל פס, מתחתן שורת השעונים והעלות, ובסוף כפתור הדחיסה. זו הפריסה שבצילום למעלה.
 
-## התקנה
+## למי זה עובד
 
-### 1. מעתיקים את התיקייה `session-hud` לתיקיית הסקילים
+| מצב | מה קורה |
+|---|---|
+| **מנוי Pro / Max** | הכול עובד. |
+| **מפתח API במקום מנוי** | אין מכסת 5 שעות, אז הכרטיס ⚡ נשאר על "after the first reply". שאר הכרטיסים עובדים. |
+| **💵 עלות במנוי** | זו העלות המשוערת לפי מחירי ה-API, לא כסף שיורד מהכרטיס. |
+| **תוסף VS Code, `claude -p`, סשן בענן** | ה-mod רץ, אבל לא מוצג. התצוגה קיימת רק בטרמינל ובאפליקציית הדסקטופ. |
 
-Claude Code טוען לבד כל mod שנמצא ב-`~/.claude/skills/<name>`.
+## עדכון והסרה
 
-**Windows (PowerShell):**
-```powershell
-git clone https://github.com/ofeklevy11/claude-code-hud.git
-cd claude-code-hud
-.\install.ps1
-```
-
-**macOS / Linux:**
-```bash
-git clone https://github.com/ofeklevy11/claude-code-hud.git
-cd claude-code-hud
-sh install.sh
-```
-
-בלי git: מורידים ZIP מ-GitHub ומעתיקים ידנית את התיקייה `session-hud` לתוך `~/.claude/skills/` (ב-Windows: `C:\Users\<שם>\.claude\skills\`).
-
-### 2. באפליקציית הדסקטופ: מוסיפים משתנה אחד ל-settings.json ⚠️
-
-**זה השלב שבלעדיו זה לא עבד לי.** בטרמינל, mods נטענים ומתעדכנים לבד. באפליקציית הדסקטופ, סשן לא עוקב אחרי תיקיית ה-mods: הוא טוען רק את מה שהיה שם ברגע שנפתח, ושום שינוי אחר כך לא נכנס. המשתנה הזה מפעיל את המעקב גם שם.
-
-פותחים את הקובץ `~/.claude/settings.json` (ב-Windows: `C:\Users\<שם>\.claude\settings.json`) ומוסיפים לבלוק `"env"` את השורה:
-
-```json
-"CLAUDE_CODE_PLUGIN_DIR_WATCH": "1"
-```
-
-אם אין בקובץ בלוק `"env"`, מוסיפים אותו ברמה העליונה של הקובץ:
-
-```json
-{
-  "env": {
-    "CLAUDE_CODE_PLUGIN_DIR_WATCH": "1"
-  },
-  ...שאר ההגדרות שכבר יש לכם
-}
-```
-
-אם כבר יש בלוק `"env"` עם מפתחות אחרים, מוסיפים פסיק אחרי השורה האחרונה בו, ומתחתיה את השורה החדשה. שומרים את הקובץ.
-
-### 3. פותחים סשן חדש
-
-ה-mod נטען בפתיחת סשן, אז סשנים שכבר היו פתוחים לפני ההתקנה לא יציגו אותו. פותחים סשן חדש ושולחים הודעה אחת. הנתונים מתמלאים אחרי התשובה הראשונה.
-
-## התקנתם גרסה קודמת?
-
-עד גרסה 1.2 היו בריפו שני mods נפרדים, `context-meter` ו-`session-hud`. מגרסה 2.0, חלון הקונטקסט נמצא בתוך `session-hud`. אם נשארה אצלכם התיקייה `~/.claude/skills/context-meter`, מחקו אותה, אחרת חלון הקונטקסט יופיע פעמיים. סקריפט ההתקנה מזהיר אם הוא מוצא אותה.
+- **עדכון אוטומטי:** כבוי כברירת מחדל ב-marketplace שאינו של Anthropic. כדי להפעיל אותו: `/plugin`, לשונית **Marketplaces**, בוחרים `claude-code-hud`, ואז **Enable auto-update**.
+- **עדכון ידני:** `/plugin`, לשונית **Installed**, בוחרים `session-hud`, ואז **Update now**.
+- **הסרה:** `/plugin uninstall session-hud@claude-code-hud`.
 
 ## לא מופיע?
 
-1. **בדקו שהתיקייה במקום הנכון:** צריך להיות `~/.claude/skills/session-hud/.claude-plugin/plugin.json`, ולא תיקייה כפולה כמו `skills/session-hud/session-hud/...`. זה קורה הרבה כשפורסים ZIP.
-2. **פתחתם סשן חדש אחרי ההתקנה ואחרי שינוי `settings.json`?** סשן שנפתח קודם לא יטען את ה-mod.
-3. **בדיקת תקינות:** מתוך התיקייה `session-hud` מריצים `claude plugin validate .`, וצריך לקבל `Validation passed`.
-4. **גרסת Claude Code:** mods קיימים רק בגרסאות חדשות. נבדק על 2.1.286. אם הגרסה שלכם ישנה, עדכנו.
-5. **עדיין כלום:** בחלק מהגרסאות מנגנון ה-mods (function hooks) כבוי כברירת מחדל. הוסיפו לאותו בלוק `"env"` גם `"CLAUDE_CODE_ENABLE_FUNCTION_HOOKS": "1"`, ופתחו סשן חדש.
+1. **פתחתם סשן חדש אחרי ההתקנה?** סשן שכבר היה פתוח לא טוען את ה-mod. אפשר גם להריץ בו `/reload-plugins`.
+2. **גרסת Claude Code:** מריצים `claude --version` בטרמינל. צריך 2.1.287 ומעלה, ואם הגרסה ישנה יותר, מעדכנים.
+3. **בדיקה שהוא נטען:** בטרמינל, `/plugin` מציג מתחת ללשוניות שורה כמו `1 mod active · session-hud`.
+4. **ה-HUD מופיע פעמיים?** כנראה התקנתם בעבר גרסה ידנית. מחקו את `~/.claude/skills/session-hud` ואת `~/.claude/skills/context-meter`, אם הם קיימים.
 
 ## התאמה אישית
 
@@ -119,14 +100,16 @@ sh install.sh
 - **ספי הצבעים:** הפונקציה `tone`.
 - **ספי ההמלצה לדחוס:** הפונקציות `compactAt` ו-`compactHard` בראש הקובץ.
 - **נקודות המעבר בין הפריסות:** הבדיקות `W >= 96` ו-`W >= 40` בסוף הקובץ.
-- **להציג גם את המכסה השבועית:** היום מוצג רק חלון 5 השעות (`st.limits.find(l => l.kind === 'five_hour')`). הנתונים של `seven_day` כבר נשלפים, ונשאר רק להוסיף להם כרטיס.
-- **מלכודת אחת:** לא לקרוא למשתנה בשם `h`. רכיבי ה-JSX נבנים דרך פונקציה בשם הזה, ומשתנה באותו שם מסתיר אותה. ה-mod קורס עם `h is not a function`. זה קרה לי.
+- **להציג גם את המכסה השבועית:** הנתונים של `seven_day` כבר נשלפים, ונשאר רק להוסיף להם כרטיס.
+- **מלכודת אחת:** לא לקרוא למשתנה בשם `h`. רכיבי ה-JSX נבנים דרך פונקציה בשם הזה, ומשתנה באותו שם מסתיר אותה. ה-mod קורס עם `h is not a function`.
 
-אחרי כל שינוי מריצים `claude plugin validate .`. אם הוספתם את `CLAUDE_CODE_PLUGIN_DIR_WATCH`, השינוי נטען בסשן הפתוח בלי לפתוח סשן חדש.
+**לפתח בלי להתקין:** `claude --plugin-dir ./session-hud` טוען את התיקייה לסשן אחד. אחרי כל שינוי מריצים `claude plugin validate ./session-hud`.
 
 ## פרטיות
 
 ה-mod קורא רק נתונים שהסשן עצמו כבר מחזיק: מילוי הקונטקסט, מכסות התוכנית והעלות. הוא לא שולח שום דבר לשום מקום ולא כותב קבצים.
+
+כמו כל mod, הוא רץ עם ההרשאות שלכם. אפשר לבדוק בדיוק מה הוא עושה לפני ההתקנה: `claude plugin validate ./session-hud` מציג את כל האירועים שהוא מאזין להם ואת כל הקריאות שהוא עושה.
 
 ## רישיון
 
@@ -138,25 +121,24 @@ MIT
 
 ## English
 
-A Claude Code mod, **Session Tracker**, that sits above the prompt box as four side-by-side cards:
+**Session Tracker** is a Claude Code mod that sits above the prompt box as four side-by-side cards:
+- **🧠 Context window:** a fill bar, tokens left, and a **Compact** button. Past 300K tokens it recommends compacting, and past 400K it turns red.
+- **⚡ 5-hour limit:** a fill bar and the time until the limit resets.
+- **⏱ Prompt time:** two clocks. **now/last** is one prompt end to end. **all** is every prompt in the session added up, with idle time excluded.
+- **💵 Session cost:** in USD.
 
-- **🧠 Context window**: fill bar and tokens left, refreshed after every tool call and after compaction, with a **Compact** button. Past 300K tokens it recommends compacting (yellow, plus a one-time toast), and past 400K it turns red. On windows smaller than 1M the thresholds are 50% and 70% of the window.
-- **⚡ 5-hour limit**: fill bar and time until it resets.
-- **⏱ Prompt time**: two clocks. **now/last** is one prompt end to end. **all** is every prompt of the session added up, with idle time excluded.
-- **💵 Session cost** in USD.
+**Install:** paste this into Claude Code (desktop app or terminal), then open a new session:
 
-Four cards across on wide windows. Two gauges plus a stats line on medium windows and in split view. Compact lines on very narrow windows.
+```
+/plugin install session-hud --marketplace ofeklevy11/claude-code-hud
+```
 
-**Install:** clone, then run `install.ps1` (Windows) or `sh install.sh` (macOS/Linux). Or copy the `session-hud` folder into `~/.claude/skills/` by hand.
+Requires Claude Code 2.1.287 or later, where mods are on by default. If the one-line install doesn't work, run `/plugin marketplace add ofeklevy11/claude-code-hud` first, then `/plugin install session-hud@claude-code-hud`.
 
-**Desktop app:** add `"CLAUDE_CODE_PLUGIN_DIR_WATCH": "1"` to the `env` block of `~/.claude/settings.json`. Without it, a desktop session loads mods only at the moment it opens and never picks up changes afterwards. Then open a new session.
+**Update and uninstall:**
+- Auto-update is off for third-party marketplaces. To turn it on: open `/plugin`, go to **Marketplaces**, select `claude-code-hud`, then **Enable auto-update**.
+- To uninstall: `/plugin uninstall session-hud@claude-code-hud`.
 
-**Upgrading from 1.x:** the separate `context-meter` mod is now part of `session-hud`. Delete `~/.claude/skills/context-meter`, or the context window shows twice.
+**Showing twice?** Delete any old manual copy in `~/.claude/skills/session-hud` or `~/.claude/skills/context-meter`.
 
-**Still nothing?**
-- Check the folder isn't nested twice.
-- Run `claude plugin validate .` inside `session-hud`.
-- Update Claude Code (tested on 2.1.286).
-- If needed, also add `"CLAUDE_CODE_ENABLE_FUNCTION_HOOKS": "1"`.
-
-Read-only: the mod reads session data only, writes no files, and sends nothing anywhere. MIT licensed.
+**Privacy:** the mod only reads session data. It writes no files and sends nothing anywhere. MIT licensed.
