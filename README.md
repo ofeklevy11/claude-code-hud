@@ -7,8 +7,10 @@
 <div dir="ltr">
 
 ```
+── 🧠 Context window · context-meter ────
 🧠 17% ██████░░░░░░░░░░░░░░░░░░
 830K left of 1M
+── ⚡ Session · session-hud ──────────
 ⚡ ██░░░░░░ 5% ↻ 4h 24m
 ⏱ Last prompt 3:56
 ⌛ All prompts 14:02

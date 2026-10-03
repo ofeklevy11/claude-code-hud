@@ -83,6 +83,15 @@ export const register: Register = on => {
     const now = await $.clock.now()
     const { Box, Text } = $.ui.resolve(e)
     const W = Math.max(20, (e.props.bodyColumns ?? 80) - 6)
+
+    // Section header: the mod's name, so each mod reads as its own block
+    const header = (
+      <Text wrap="truncate">
+        <Text dimColor>{'── '}</Text>
+        <Text bold color="yellowBright">{'⚡ Session'}</Text>
+        <Text dimColor>{` · session-hud ${'─'.repeat(Math.max(2, W - 27))}`}</Text>
+      </Text>
+    )
     const SEP = '   │   '
 
     // Each piece is a list of spans; a row is one Text holding them, so it never splits into columns
@@ -144,6 +153,7 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column">
+        {header}
         {rows}
         {below}
       </Box>

@@ -63,6 +63,15 @@ export const register: Register = on => {
     const left = m.tokens === null ? m.window : Math.max(0, m.window - m.tokens)
     const W = Math.max(20, (e.props.bodyColumns ?? 80) - 6)
 
+    // Section header: the mod's name, so each mod reads as its own block
+    const header = (
+      <Text wrap="truncate">
+        <Text dimColor>{'── '}</Text>
+        <Text bold color="blueBright">{'🧠 Context window'}</Text>
+        <Text dimColor>{` · context-meter ${'─'.repeat(Math.max(2, W - 36))}`}</Text>
+      </Text>
+    )
+
     // One Text per row with colored spans inside: no row ever splits into columns
     const bar = (cells: number) => {
       const filled = Math.max(m.percent === null ? 0 : 1, Math.round((p / 100) * cells))
@@ -78,6 +87,7 @@ export const register: Register = on => {
       const cells = Math.min(CELLS, W - 64)
       return (
         <Box flexDirection="column">
+        {header}
         <Text wrap="truncate">
           <Text bold>🧠 Context window </Text>
           {bar(cells)}
@@ -93,6 +103,7 @@ export const register: Register = on => {
     if (W >= 46) {
       return (
         <Box flexDirection="column">
+          {header}
           <Text wrap="truncate">
             <Text bold>🧠 Context window </Text>
             <Text bold color={tone(p)}>{pct} </Text>
@@ -107,6 +118,7 @@ export const register: Register = on => {
     // Narrow (split view): compact bar, then the essentials
     return (
       <Box flexDirection="column">
+        {header}
         <Text wrap="truncate">
           <Text bold>🧠 </Text>
           <Text bold color={tone(p)}>{pct} </Text>
