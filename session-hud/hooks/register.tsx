@@ -3,7 +3,7 @@ import type { Register } from 'claude-code'
 
 import type { Hud, Limit } from '../types'
 
-const EMPTY: Hud = { limits: [], costUsd: null, isRunning: false, turnSeconds: 0, totalSeconds: 0, ctxTokens: null, ctxWindow: 0, ctxPercent: null, nudged: false }
+const EMPTY: Hud = { limits: [], costUsd: null, isRunning: false, turnSeconds: 0, totalSeconds: 0, turnStartedAt: 0, ctxTokens: null, ctxWindow: 0, ctxPercent: null, nudged: false }
 const hud = atom({ plugin: 'session-hud', key: 'hud' } as const, EMPTY)
 
 const tone = (p: number): string => (p >= 85 ? 'red' : p >= 60 ? 'yellow' : 'green')
@@ -50,7 +50,14 @@ async function pull($: any): Promise<void> {
 }
 
 export const register: Register = on => {
-  let startedAt = 0
+  // The start time lives in state, not in a module variable: a reload mid-prompt would reset that to 0
+  // and count the time since 1970 as the prompt's length
+  const MAX_TURN = 24 * 3600
+  const elapsed = async ($: any, startedAt: number): Promise<number> => {
+    if (!(startedAt > 0)) return 0
+    const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
+    return s >= 0 && s <= MAX_TURN ? s : 0
+  }
   let tick: { cancel: () => void } | null = null
 
   on('session.start', async ($, e, next) => {
@@ -60,11 +67,15 @@ export const register: Register = on => {
   })
 
   on('prompt.submit', async ($, e, next) => {
-    startedAt = await $.clock.now()
-    await update($, hud, st => ({ ...st, isRunning: true, turnSeconds: 0 }))
+    const now = await $.clock.now()
+    // A total from an older version that counted from 1970 is dropped
+    await update($, hud, st => ({
+      ...st, isRunning: true, turnSeconds: 0, turnStartedAt: now,
+      totalSeconds: (st.totalSeconds ?? 0) > 30 * 24 * 3600 ? 0 : st.totalSeconds ?? 0,
+    }))
     tick?.cancel()
     tick = $.clock.every(1000, async () => {
-      const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
+      const s = await elapsed($, (await read($, hud)).turnStartedAt)
       await update($, hud, st => ({ ...st, turnSeconds: s }))
     })
     return next(e)
@@ -74,9 +85,9 @@ export const register: Register = on => {
     const r = await next(e)
     tick?.cancel()
     tick = null
-    const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
+    const s = await elapsed($, (await read($, hud)).turnStartedAt)
     // Every finished prompt adds its time to the session total
-    await update($, hud, st => ({ ...st, isRunning: false, turnSeconds: s, totalSeconds: (st.totalSeconds ?? 0) + s }))
+    await update($, hud, st => ({ ...st, isRunning: false, turnSeconds: s, turnStartedAt: 0, totalSeconds: (st.totalSeconds ?? 0) + s }))
     await pull($)
     if (s >= 120) $.ui.toast(`✅ Turn finished in ${clock(s)}`)
     return r

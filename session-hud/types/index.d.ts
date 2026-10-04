@@ -5,6 +5,7 @@ export type Hud = {
   isRunning: boolean
   turnSeconds: number
   totalSeconds: number
+  turnStartedAt: number
   ctxTokens: number | null
   ctxWindow: number
   ctxPercent: number | null
