@@ -46,7 +46,7 @@ claude plugin marketplace add ofeklevy11/claude-code-hud && claude plugin instal
 
 | כרטיס | מה הוא מציג |
 |---|---|
-| **🧠 Context window** | פס של מילוי חלון הקונטקסט באחוזים וכמה טוקנים נשארו, עם כפתור **Compact** שדוחס את השיחה בלחיצה. |
+| **🧠 Context window** | פס של מילוי חלון הקונטקסט באחוזים וכמה טוקנים נשארו. כשהשיחה ארוכה מדי, הכרטיס אומר לכם להקליד `/compact`. |
 | **⚡ 5-hour limit** | פס של מכסת 5 השעות באחוזים, וכמה זמן נשאר עד שהיא מתאפסת. |
 | **⏱ Prompt time** | שני שעונים: **now / last** הוא הזמן של פרומפט אחד, ו-**all** הוא סכום הזמן של כל הפרומפטים בסשן. |
 | **💵 Session cost** | כמה הסשן עלה עד עכשיו, בדולרים. |
@@ -60,8 +60,8 @@ claude plugin marketplace add ofeklevy11/claude-code-hud && claude plugin instal
 - **all:** סכום הזמנים של כל הפרומפטים בסשן. אם היו פרומפטים של 3, 7 ו-4 דקות, יופיע `14:00`. נספר רק הזמן ש-Claude עבד בפועל, בלי הזמן שבו הסשן חיכה לכם.
 
 **💡 המלצה לדחוס את השיחה:** שיחה ארוכה מדי פוגעת באיכות התשובות, גם כשעוד נשאר מקום בחלון. לכן ה-mod ממליץ לדחוס הרבה לפני שהחלון מתמלא:
-- **מעל 300K טוקנים:** מופיעה שורה צהובה "Compact recommended", והכפתור הופך ל-**Compact now**. קופצת גם הודעה, פעם אחת בכל פעם שעוברים את הסף.
-- **מעל 400K טוקנים:** השורה הופכת לאדומה.
+- **מעל 300K טוקנים:** מופיעות בכרטיס שתי שורות צהובות: "Compact recommended" ו-"👉 Type /compact now". קופצת גם הודעה, פעם אחת בכל פעם שעוברים את הסף. הדחיסה עצמה: מקלידים `/compact` בתיבת הכתיבה.
+- **מעל 400K טוקנים:** השורות הופכות לאדומות.
 - **בחלון קטן מ-1M:** הספים הם 50% ו-70% מגודל החלון.
 
 הספים מבוססים על כלל אצבע מקובל, שלפיו האיכות מתחילה לרדת בסביבות 300K עד 400K טוקנים. זה תלוי במשימה, אז זו המלצה ולא חוק.
@@ -69,7 +69,7 @@ claude plugin marketplace add ofeklevy11/claude-code-hud && claude plugin instal
 **הפריסה מתאימה את עצמה לרוחב החלון:**
 - **חלון רחב:** ארבעת הכרטיסים בשורה אחת.
 - **חלון בינוני ו-split view:** שני הפסים זה לצד זה, ומתחתם שורה אחת עם השעונים והעלות.
-- **חלון צר מאוד:** שורה קצרה לכל פס, מתחתן שורת השעונים והעלות, ובסוף כפתור הדחיסה. זו הפריסה שבצילום למעלה.
+- **חלון צר מאוד:** שורה קצרה לכל פס, מתחתן שורת השעונים והעלות, ובסוף, כשצריך, שורת "type /compact". זו הפריסה שבצילום למעלה.
 
 ## למי זה עובד
 
@@ -122,7 +122,7 @@ MIT
 ## English
 
 **Session Tracker** is a Claude Code mod that sits above the prompt box as four side-by-side cards:
-- **🧠 Context window:** a fill bar, tokens left, and a **Compact** button. Past 300K tokens it recommends compacting, and past 400K it turns red.
+- **🧠 Context window:** a fill bar and tokens left. Past 300K tokens it tells you to type `/compact` (yellow, plus a one-time toast), and past 400K it turns red.
 - **⚡ 5-hour limit:** a fill bar and the time until the limit resets.
 - **⏱ Prompt time:** two clocks. **now/last** is one prompt end to end. **all** is every prompt in the session added up, with idle time excluded.
 - **💵 Session cost:** in USD.

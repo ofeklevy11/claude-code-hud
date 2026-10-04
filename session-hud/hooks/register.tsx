@@ -42,7 +42,7 @@ async function pull($: any): Promise<void> {
   const st = await read($, hud)
   const isOver = st.ctxTokens !== null && st.ctxWindow > 0 && st.ctxTokens >= compactAt(st.ctxWindow)
   if (isOver && !st.nudged) {
-    $.ui.toast(`💡 Context passed ${short(compactAt(st.ctxWindow))} tokens: Compact recommended 300-400K+ (if 1M context window)`)
+    $.ui.toast(`💡 Context passed ${short(compactAt(st.ctxWindow))} tokens: Compact recommended, type /compact`)
     await update($, hud, x => ({ ...x, nudged: true }))
   } else if (!isOver && st.nudged) {
     await update($, hud, x => ({ ...x, nudged: false }))
@@ -101,7 +101,7 @@ export const register: Register = on => {
 
     const st = await read($, hud)
     const now = await $.clock.now()
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const { Box, Text } = $.ui.resolve(e)
     const W = Math.max(20, (e.props.bodyColumns ?? 80) - 6)
 
     // Section header: the mod's name
@@ -132,25 +132,10 @@ export const register: Register = on => {
     )
     const isOver = st.ctxTokens !== null && st.ctxWindow > 0 && st.ctxTokens >= compactAt(st.ctxWindow)
     const isHard = isOver && st.ctxTokens !== null && st.ctxTokens >= compactHard(st.ctxWindow)
-    // Runs /compact exactly as if typed: queued until the session is idle, with its progress in the transcript
-    const runCompact = async () => {
-      const isBusy = (await read($, hud)).isRunning
-      $.ui.toast(isBusy ? '🗜 Compact queued: it runs when Claude finishes' : '🗜 Compacting the conversation…')
-      try {
-        await $.command.run({ command: 'compact' })
-        await pull($)
-      } catch (err: any) {
-        $.ui.toast(`Compact did not run: ${String(err?.message ?? err).slice(0, 80)}`)
-      }
-    }
-    const compactBtn = (
-      <Button
-        key="compact"
-        label={isOver ? 'Compact now' : 'Compact'}
-        variant={isOver ? 'primary' : 'secondary'}
-        onPress={() => { void runCompact() }}
-      />
-    )
+    // Mods cannot press /compact for you here, so the card tells you what to type
+    const compactHint = isOver
+      ? <Text bold color={isHard ? 'red' : 'yellow'}>{'👉 Type /compact now'}</Text>
+      : null
     const ctxNote = st.ctxTokens === null
       ? <Text dimColor>no data yet</Text>
       : isHard
@@ -163,7 +148,7 @@ export const register: Register = on => {
         <Text wrap="truncate">{label('🧠 Context window')}</Text>
         <Text wrap="truncate">{bar(Math.max(4, w - 6), st.ctxPercent)}</Text>
         <Text wrap="truncate">{ctxNote}</Text>
-        {compactBtn}
+        {compactHint ? <Text wrap="truncate">{compactHint}</Text> : null}
       </Box>
     )
     const fiveCard = (w: number) => card(w,
@@ -210,8 +195,8 @@ export const register: Register = on => {
         <Text wrap="truncate">{label('🧠 ')}{bar(cells, st.ctxPercent)}<Text dimColor>{st.ctxTokens === null ? '' : ` ${short(ctxLeft)} left`}</Text></Text>,
         <Text wrap="truncate">{label('⚡ ')}{five ? bar(cells, five.percent) : <Text dimColor>—</Text>}<Text dimColor>{reset5 ? ` ↻ ${reset5.replace('resets in ', '')}` : ''}</Text></Text>,
         statsLine,
-        <Box>{isOver ? <Text color="yellow">{'💡 Compact recommended 300-400K+ (if 1M context window)  '}</Text> : <Text>{''}</Text>}{compactBtn}</Box>,
       ]
+      if (isOver) rows.push(<Text wrap="truncate" bold color={isHard ? 'red' : 'yellow'}>{'💡 Compact recommended · type /compact'}</Text>)
     }
 
     return (
