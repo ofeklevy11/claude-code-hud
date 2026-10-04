@@ -52,6 +52,8 @@ async function pull($: any): Promise<void> {
 // Seconds since the prompt started. The start time lives in state, not in a module variable: a reload
 // mid-prompt would reset that to 0 and count the time since 1970 as the prompt's length
 const MAX_TURN = 24 * 3600
+// A session total from before 2.3.1 may hold the time since 1970; anything past 30 days is that, not work
+const cleanTotal = (n: number | undefined): number => (n !== undefined && n >= 0 && n <= 30 * 24 * 3600 ? n : 0)
 async function elapsed($: any, startedAt: number): Promise<number> {
   if (!(startedAt > 0)) return 0
   const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
@@ -69,10 +71,9 @@ export const register: Register = on => {
 
   on('prompt.submit', async ($, e, next) => {
     const now = await $.clock.now()
-    // A total from an older version that counted from 1970 is dropped
     await update($, hud, st => ({
       ...st, isRunning: true, turnSeconds: 0, turnStartedAt: now,
-      totalSeconds: (st.totalSeconds ?? 0) > 30 * 24 * 3600 ? 0 : st.totalSeconds ?? 0,
+      totalSeconds: cleanTotal(st.totalSeconds),
     }))
     tick?.cancel()
     tick = $.clock.every(1000, async () => {
@@ -88,7 +89,7 @@ export const register: Register = on => {
     tick = null
     const s = await elapsed($, (await read($, hud)).turnStartedAt)
     // Every finished prompt adds its time to the session total
-    await update($, hud, st => ({ ...st, isRunning: false, turnSeconds: s, turnStartedAt: 0, totalSeconds: (st.totalSeconds ?? 0) + s }))
+    await update($, hud, st => ({ ...st, isRunning: false, turnSeconds: s, turnStartedAt: 0, totalSeconds: cleanTotal(st.totalSeconds) + s }))
     await pull($)
     if (s >= 120) $.ui.toast(`✅ Turn finished in ${clock(s)}`)
     return r
@@ -122,7 +123,7 @@ export const register: Register = on => {
 
     const ctxLeft = st.ctxTokens === null ? st.ctxWindow : Math.max(0, st.ctxWindow - st.ctxTokens)
     // Two clocks: the prompt running now (or the last one), and every prompt of the session added up
-    const total = (st.totalSeconds ?? 0) + (st.isRunning ? st.turnSeconds : 0)
+    const total = cleanTotal(st.totalSeconds) + (st.isRunning ? st.turnSeconds : 0)
     // Labels in blue, values in their own color
     const label = (t: string) => <Text bold color="blueBright">{t}</Text>
 
