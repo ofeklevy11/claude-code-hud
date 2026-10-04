@@ -132,24 +132,15 @@ export const register: Register = on => {
     )
     const isOver = st.ctxTokens !== null && st.ctxWindow > 0 && st.ctxTokens >= compactAt(st.ctxWindow)
     const isHard = isOver && st.ctxTokens !== null && st.ctxTokens >= compactHard(st.ctxWindow)
-    // Compaction runs only between turns: rejects while one runs, resolves { skip } when a hook vetoes it
-    const BUSY = '⏳ Compact works between turns: press it again when Claude finishes'
+    // Runs /compact exactly as if typed: queued until the session is idle, with its progress in the transcript
     const runCompact = async () => {
-      if ((await read($, hud)).isRunning) {
-        $.ui.toast(BUSY)
-        return
-      }
-      $.ui.toast('🗜 Compacting the conversation…')
+      const isBusy = (await read($, hud)).isRunning
+      $.ui.toast(isBusy ? '🗜 Compact queued: it runs when Claude finishes' : '🗜 Compacting the conversation…')
       try {
-        const r: any = await $.session.compact()
-        if (r && typeof r.skip === 'string') {
-          $.ui.toast(`Compact skipped: ${r.skip}`)
-          return
-        }
+        await $.command.run({ command: 'compact' })
         await pull($)
-        $.ui.toast('✅ Conversation compacted')
-      } catch {
-        $.ui.toast(BUSY)
+      } catch (err: any) {
+        $.ui.toast(`Compact did not run: ${String(err?.message ?? err).slice(0, 80)}`)
       }
     }
     const compactBtn = (
