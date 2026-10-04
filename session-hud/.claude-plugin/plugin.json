@@ -1,6 +1,6 @@
 {
   "name": "session-hud",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Session Tracker above the prompt box: context window with a /compact recommendation, 5-hour plan limit, prompt clocks and session cost.",
   "author": {
     "name": "Ofek Levy",

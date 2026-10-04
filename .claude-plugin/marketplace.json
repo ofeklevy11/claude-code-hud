@@ -6,13 +6,13 @@
   },
   "metadata": {
     "description": "Session Tracker for Claude Code: context window, 5-hour limit, prompt clocks and session cost above the prompt box.",
-    "version": "2.3.1"
+    "version": "2.3.2"
   },
   "plugins": [
     {
       "name": "session-hud",
       "description": "Session Tracker above the prompt box: context window with a /compact recommendation, 5-hour plan limit, prompt clocks and session cost.",
-      "version": "2.3.1",
+      "version": "2.3.2",
       "author": {
         "name": "Ofek Levy"
       },

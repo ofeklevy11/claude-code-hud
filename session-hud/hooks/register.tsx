@@ -49,15 +49,16 @@ async function pull($: any): Promise<void> {
   }
 }
 
+// Seconds since the prompt started. The start time lives in state, not in a module variable: a reload
+// mid-prompt would reset that to 0 and count the time since 1970 as the prompt's length
+const MAX_TURN = 24 * 3600
+async function elapsed($: any, startedAt: number): Promise<number> {
+  if (!(startedAt > 0)) return 0
+  const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
+  return s >= 0 && s <= MAX_TURN ? s : 0
+}
+
 export const register: Register = on => {
-  // The start time lives in state, not in a module variable: a reload mid-prompt would reset that to 0
-  // and count the time since 1970 as the prompt's length
-  const MAX_TURN = 24 * 3600
-  const elapsed = async ($: any, startedAt: number): Promise<number> => {
-    if (!(startedAt > 0)) return 0
-    const s = Math.round(((await $.clock.now()) - startedAt) / 1000)
-    return s >= 0 && s <= MAX_TURN ? s : 0
-  }
   let tick: { cancel: () => void } | null = null
 
   on('session.start', async ($, e, next) => {
